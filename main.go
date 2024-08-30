@@ -6,30 +6,60 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Todo struct {
-	id      int    `json:"id"`
-	body    string `json:"body"`
-	isAdmin bool   `json:"isAdmin"`
+type Account struct {
+	Id       int    `json:"id"`
+	UserName string `json:"userName"`
+	IsAdmin  bool   `json:"isAdmin"`
 }
 
 func main() {
-	todos := []Todo{}
+	allUserAccounts := []Account{}
 	fmt.Println("data3")
 	app := fiber.New()
-	
+
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.Status(200).JSON(fiber.Map{"data": "hello world"})
+		return c.Status(200).JSON("Get all user account")
+	})
+
+	app.Get("/accounts", func(c *fiber.Ctx) error {
+		fmt.Println(allUserAccounts)
+		return c.Status(200).JSON(allUserAccounts)
 	})
 	app.Post("/api/add", func(c *fiber.Ctx) error {
 
-		singleTodo := &Todo{}
-		if err := c.BodyParser(singleTodo); err != nil {
+		singleAccount := new(Account)
+		if err := c.BodyParser(singleAccount); err != nil {
 			return err
 		}
-		singleTodo.id = len(todos) + 1
-		todos = append(todos, *singleTodo)
-		fmt.Println(singleTodo)
-		return c.Status(201).JSON(todos)
+		singleAccount.Id = len(allUserAccounts) + 1
+
+		// singleAccount.userName = "string(c.Body())"
+		allUserAccounts = append(allUserAccounts, *singleAccount)
+		fmt.Println(*singleAccount)
+		return c.Status(201).JSON(*singleAccount)
+	})
+	app.Patch("/api/account/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		for i, eachAccount := range allUserAccounts {
+			if fmt.Sprint(eachAccount.Id) == id {
+				allUserAccounts[i].IsAdmin = true
+
+				return c.Status(200).JSON(allUserAccounts[i])
+			}
+		}
+		return c.SendStatus(501)
+	})
+	app.Delete("/api/account/:id", func(c *fiber.Ctx) error {
+
+		id := c.Params("id")
+		for index, eachAccount := range allUserAccounts {
+			if fmt.Sprint(eachAccount.Id) == id {
+				allUserAccounts = append(allUserAccounts[:index], allUserAccounts[index+1:]...)
+
+				return c.Status(200).JSON(allUserAccounts[index])
+			}
+		}
+		return c.SendStatus(404)
 	})
 	app.Listen(":4000")
 }
